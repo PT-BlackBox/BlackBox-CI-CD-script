@@ -4,7 +4,6 @@ from typing import (
     Callable,
     Dict,
     List,
-    Literal,
     NamedTuple,
     Optional,
     TypedDict,
@@ -14,9 +13,13 @@ from typing import (
 VulnCommon = Dict[str, Any]
 
 
-ScanStatus = Literal[
-    'CREATED', 'SENT_START_TASK', 'STARTED', 'SENT_STOP_TASK', 'STOPPED', 'FINISHED'
-]
+class ScanStatus(str, Enum):
+    created = 'created'
+    sent_start_task = 'sent_start_task'
+    started = 'started'
+    sent_stop_task = 'sent_stop_task'
+    stopped = 'stopped'
+    finished = 'finished'
 
 
 OnEnvUpdater = Callable[[Dict[str, str]], None]
@@ -34,12 +37,10 @@ class VulnGroup(TypedDict):
 
 
 class VulnPage(TypedDict):
-    totalItems: int
-    hasPrevPage: bool
-    hasNextPage: bool
-    pagesCount: int
-    currentPage: int
     items: List[VulnCommon]
+    totalItems: int
+    totalCount: int
+    currentPage: int
 
 
 class VulnIssue(TypedDict):
@@ -87,9 +88,9 @@ class TargetVulns(TypedDict):
 
 
 class ReportScanStatus(str, Enum):
-    IN_PROGRESS = 'IN_PROGRESS'
-    STOPPED = 'STOPPED'
-    FINISHED = 'FINISHED'
+    in_progress = 'in_progress'
+    stopped = 'stopped'
+    finished = 'finished'
 
 
 class ErrorReport(TypedDict):
@@ -164,8 +165,8 @@ class Site(TypedDict):
 
 
 class UserGroupType(str, Enum):
-    PRODUCT = 'PRODUCT'
-    USER = 'USER'
+    PRODUCT = 'product'
+    USER = 'user'
 
 
 class UserGroupInfo(SiteGroupInfo):
