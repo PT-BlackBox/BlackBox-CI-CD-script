@@ -1,5 +1,6 @@
 import urllib.parse
 from typing import Any, List, Optional, cast
+from http import HTTPStatus
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -35,7 +36,6 @@ class BlackBoxAPI:
         self._sess.verify = not ignore_ssl
         self._test_base_url(base_url)
         self._api_service_url = urllib.parse.urljoin(base_url, 'app/api/v1/')
-        self._reports_service_url = urllib.parse.urljoin(base_url, 'app/reports/v1/')
         self._sess.hooks['response'] = [
             self._raise_for_status,
             self._ensure_json,
@@ -45,28 +45,28 @@ class BlackBoxAPI:
     def get_groups(self) -> List[UserGroupInfo]:
         groups_url = urllib.parse.urljoin(self._api_service_url, 'groups')
         resp = self._get(groups_url)
-        return cast(List[UserGroupInfo], resp.json()['data'])
+        return cast(List[UserGroupInfo], resp.json())
 
     def get_group(self, *, group_uuid: str) -> UserGroupInfo:
         group_url = urllib.parse.urljoin(self._api_service_url, f'groups/{group_uuid}')
         resp = self._get(group_url)
-        return cast(UserGroupInfo, resp.json()['data'])
+        return cast(UserGroupInfo, resp.json())
 
     def get_sites(self) -> List[Site]:
         sites_url = urllib.parse.urljoin(self._api_service_url, 'sites')
         resp = self._get(sites_url)
-        return cast(List[Site], resp.json()['data'])
+        return cast(List[Site], resp.json())
 
     def get_site(self, *, site_uuid: str) -> Site:
         sites_url = urllib.parse.urljoin(self._api_service_url, f'sites/{site_uuid}')
         resp = self._get(sites_url)
-        return cast(Site, resp.json()['data'])
+        return cast(Site, resp.json())
 
     def add_site(self, *, target_url: str, group_uuid: str) -> str:
         sites_url = urllib.parse.urljoin(self._api_service_url, 'sites/add')
         sites_req = {'url': target_url, 'groupUUID': group_uuid}
         resp = self._post(sites_url, json=sites_req)
-        site_uuid = resp.json()['data']['uuid']
+        site_uuid = resp.json()['uuid']
         return str(site_uuid)
 
     def set_site_settings(
@@ -92,7 +92,7 @@ class BlackBoxAPI:
             self._api_service_url, f'sites/{site_uuid}/settings'
         )
         resp = self._get(sites_url)
-        settings = resp.json()['data']
+        settings = resp.json()
         return cast(SiteSettings, settings)
 
     def start_scan(self, *, site_uuid: str) -> int:
@@ -100,7 +100,7 @@ class BlackBoxAPI:
             self._api_service_url, f'sites/{site_uuid}/start'
         )
         resp = self._post(sites_url)
-        scan_id = resp.json()['data']['id']
+        scan_id = resp.json()['id']
         return int(scan_id)
 
     def stop_scan(self, *, site_uuid: str) -> None:
@@ -114,7 +114,7 @@ class BlackBoxAPI:
             self._api_service_url, f'sites/{site_uuid}/scans/{scan_id}'
         )
         resp = self._get(scan_url)
-        scan = resp.json()['data']
+        scan = resp.json()
         return cast(Scan, scan)
 
     def get_vuln_group_page(
@@ -135,29 +135,29 @@ class BlackBoxAPI:
             f'?limit={limit}&page={page}',
         )
         resp = self._get(vuln_group_url)
-        return cast(VulnPage, resp.json()['data'])
+        return cast(VulnPage, resp.json())
 
     def get_vuln_groups(self, *, site_uuid: str, scan_id: int) -> List[VulnGroup]:
         vulns_url = urllib.parse.urljoin(
             self._api_service_url, f'sites/{site_uuid}/scans/{scan_id}/vulnerabilities'
         )
         resp = self._get(vulns_url)
-        return cast(List[VulnGroup], resp.json()['data'])
+        return cast(List[VulnGroup], resp.json())
 
     def get_score(self, *, site_uuid: str, scan_id: int) -> Optional[float]:
         score_url = urllib.parse.urljoin(
             self._api_service_url, f'sites/{site_uuid}/scans/{scan_id}'
         )
         resp = self._get(score_url)
-        score = resp.json()['data']['score']
+        score = resp.json()['score']
         return cast(Optional[float], score)
 
     def create_shared_link(self, *, site_uuid: str, scan_id: int) -> str:
         url = urllib.parse.urljoin(
             self._api_service_url, f'sites/{site_uuid}/scans/{scan_id}/shared'
         )
-        resp = self._post(url)
-        uuid = resp.json()['data']['uuid']
+        resp = self._post(url, json={})
+        uuid = resp.json()['uuid']
         return cast(str, uuid)
 
     def create_auth_profile(
@@ -169,7 +169,7 @@ class BlackBoxAPI:
         group_uuid: str,
         name: str,
     ) -> str:
-        url = urllib.parse.urljoin(self._api_service_url, 'authprofiles')
+        url = urllib.parse.urljoin(self._api_service_url, 'auth-profiles')
         authprofiles_req = {
             'name': name,
             'type': auth_type,
@@ -177,15 +177,13 @@ class BlackBoxAPI:
             'groupUUID': group_uuid,
         }
         resp = self._post(url, json=authprofiles_req)
-        uuid = resp.json()['data']['uuid']
+        uuid = resp.json()['uuid']
         return cast(str, uuid)
 
     def get_sarif_report_content(
         self, *, site_uuid: str, scan_id: int, locale: ReportLocale
     ) -> bytes:
-        url = urllib.parse.urljoin(
-            self._reports_service_url, f'sarif/{site_uuid}/{scan_id}'
-        )
+        url = urllib.parse.urljoin(self._api_service_url, f'reports/sarif/{site_uuid}/{scan_id}')
         params = {
             'locale': locale.value,
         }
@@ -201,9 +199,7 @@ class BlackBoxAPI:
         locale: ReportLocale,
         template: ReportHTMLTemplate,
     ) -> bytes:
-        url = urllib.parse.urljoin(
-            self._reports_service_url, f'html/{site_uuid}/{scan_id}'
-        )
+        url = urllib.parse.urljoin(self._api_service_url, f'reports/html/{site_uuid}/{scan_id}')
         params = {
             'locale': locale.value,
             'template': template.value,
@@ -250,6 +246,8 @@ class BlackBoxAPI:
 
     @staticmethod
     def _ensure_json(resp: requests.Response, *args: Any, **kwargs: Any) -> None:
+        if resp.status_code == HTTPStatus.NO_CONTENT:
+            return
         if resp.headers.get('content-type') != 'application/json':
             raise BlackBoxError(
                 'unexpected API response content type, '

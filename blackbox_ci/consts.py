@@ -24,23 +24,12 @@ STANDARD_PORT_SCHEMES = {
 DEFAULT_SCHEME = 'https'
 
 # scan status consts
-SCAN_STATUS_FINISHED: ScanStatus = 'FINISHED'
-IDLE_SCAN_STATUSES: Tuple[ScanStatus, ...] = ('STOPPED', 'FINISHED')
+IDLE_SCAN_STATUSES: Tuple[ScanStatus, ...] = (ScanStatus.stopped, ScanStatus.finished)
 
 # vulns consts
 PAGE_VULNS_LIMIT = 100
 
 # report consts
-HTML_REPORT_SHORTNAMES = (
-    ReportTemplateShortname.HTML,
-    ReportTemplateShortname.NIST,
-    ReportTemplateShortname.OUD4,
-    ReportTemplateShortname.OWASP,
-    ReportTemplateShortname.OWASP_MOBILE,
-    ReportTemplateShortname.PCIDSS,
-    ReportTemplateShortname.SANS,
-)
-SARIF_REPORT_SHORTNAMES = (ReportTemplateShortname.SARIF,)
 HTML_TEMPLATES_MAP = {
     ReportTemplateShortname.HTML: ReportHTMLTemplate.PLAIN,
     ReportTemplateShortname.NIST: ReportHTMLTemplate.NIST,

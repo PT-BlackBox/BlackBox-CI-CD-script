@@ -24,13 +24,11 @@ from blackbox_ci.consts import (
     AUTH_USERNAME_FIELD_KEY,
     AUTH_USERNAME_KEY,
     AUTO_CREATE_OPTION,
-    HTML_REPORT_SHORTNAMES,
     HTML_TEMPLATES_MAP,
     IDLE_SCAN_STATUSES,
     PAGE_VULNS_LIMIT,
     RESET_API_PROFILE,
     RESET_AUTH_PROFILE,
-    SCAN_STATUS_FINISHED,
     TARGET_URL_OPTION,
 )
 from blackbox_ci.errors import BlackBoxError, BlackBoxHTTPError, BlackBoxUrlError
@@ -58,6 +56,7 @@ from blackbox_ci.types import (
     ReturnType,
     ScanProfile,
     ScanReport,
+    ScanStatus,
     Site,
     SiteSettings,
     TargetVulns,
@@ -268,7 +267,7 @@ class BlackBoxOperator:
     @ensure_attrs_set('_site_uuid', '_scan_id')
     def is_scan_ok(self) -> bool:
         scan = self._api.get_scan(site_uuid=self._site_uuid, scan_id=self._scan_id)
-        return scan['status'] == SCAN_STATUS_FINISHED and scan['errorReason'] is None
+        return scan['status'] == ScanStatus.finished and scan['errorReason'] is None
 
     @ensure_attrs_set('_site_uuid', '_scan_id')
     def get_scan_error_reason(self) -> Optional[str]:
@@ -311,7 +310,7 @@ class BlackBoxOperator:
             'url': self._scan_url,
             'scan_status': ReportScanStatus[scan['status']]
             if scan['status'] in IDLE_SCAN_STATUSES
-            else ReportScanStatus.IN_PROGRESS,
+            else ReportScanStatus.in_progress,
             'score': None,
             'sharedLink': None,
             'report_path': report_path,
@@ -366,7 +365,7 @@ class BlackBoxOperator:
                 report['scan_status'] = (
                     ReportScanStatus[scan['status']]
                     if scan['status'] in IDLE_SCAN_STATUSES
-                    else ReportScanStatus.IN_PROGRESS
+                    else ReportScanStatus.in_progress
                 )
                 if shared_link:
                     report['sharedLink'] = self._create_shared_link()
@@ -412,7 +411,7 @@ class BlackBoxOperator:
         if not self._scan_finished:
             raise BlackBoxError('scan must be finished or stopped to generate report')
 
-        if template_shortname in HTML_REPORT_SHORTNAMES:
+        if template_shortname in HTML_TEMPLATES_MAP.keys():
             extension = ReportExtension.HTML
             report_content = self._api.get_html_report_content(
                 site_uuid=self._site_uuid,
@@ -445,7 +444,7 @@ class BlackBoxOperator:
             verbose = (
                 f'the error reason is "{error_reason}"'
                 if error_reason
-                else f'scan status is "{ReportScanStatus.STOPPED.value}"'
+                else f'scan status is "{ReportScanStatus.stopped.value}"'
             )
             raise BlackBoxError(
                 f'the scan did not succeed, {verbose}, '
@@ -622,7 +621,7 @@ class BlackBoxOperator:
                 page=page,
             )
             vulns.extend(vuln_page['items'])
-            has_next_page = vuln_page['hasNextPage']
+            has_next_page = vuln_page['totalCount'] > vuln_page['currentPage']
             page += 1
 
         return vulns
