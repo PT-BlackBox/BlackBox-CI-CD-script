@@ -79,10 +79,10 @@ def check_report_output_options(
     *,
     report_dir: Optional[str],
     no_wait: bool,
-    scan_id: Optional[int],
+    scan_uuid: Optional[str],
     results_only: bool,
 ) -> None:
-    if results_only or scan_id:
+    if results_only or scan_uuid:
         # no_wait option ignored in such cases
         # the ability to generate a report should be checked based on the scan status
         return
@@ -97,10 +97,10 @@ def check_auth_options(
     *,
     auth_profile_uuid: Optional[str],
     auth_data: Optional[TextIO],
-    scan_id: Optional[int],
+    scan_uuid: Optional[str],
     results_only: bool,
 ) -> None:
-    if results_only or scan_id:
+    if results_only or scan_uuid:
         # auth settings options ignored in such cases
         return
     if auth_data is not None and auth_profile_uuid is not None:

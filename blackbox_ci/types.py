@@ -1,14 +1,5 @@
 from enum import Enum
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    NamedTuple,
-    Optional,
-    TypedDict,
-    TypeVar,
-)
+from typing import Any, Callable, Dict, List, NamedTuple, Optional, TypedDict, TypeVar
 
 VulnCommon = Dict[str, Any]
 
@@ -139,7 +130,7 @@ class SiteSettings(TypedDict):
 
 class Scan(TypedDict):
     errorReason: Optional[str]
-    id: int
+    uuid: str
     status: ScanStatus
     progress: int
     profile: ScanProfile

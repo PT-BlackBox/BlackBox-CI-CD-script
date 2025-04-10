@@ -76,10 +76,10 @@ Options:
                                   generated. Specifies file localization for
                                   report in --report-dir.
   --results-only                  Only get results of specified site. Last
-                                  scan results by default. Use --scan-id
+                                  scan results by default. Use --scan-uuid
                                   option to get results of specific scan.
-  --scan-id INTEGER RANGE         Set the scan ID to get the results. Can be
-                                  used without --results-only option.  [x>=1]
+  --scan-uuid, --scan-id TEXT     Set the scan UUID to get the results. Can be
+                                  used without --results-only option.
   --auth-data FILENAME            Set path to file with authentication data.
                                   If this option is used, a new authentication
                                   profile with the data provided will be
@@ -223,7 +223,7 @@ Example output for `--target-url` option (reformatted for readability):
 {
     "target_url": "http://staging.example.com/",
     "target_uuid": "ccb7de77-ff51-464d-bf25-7ebcfe0403d6",
-    "url": "https://bbs.ptsecurity.com/sites/ccb7de77-ff51-464d-bf25-7ebcfe0403d6/scans/1",
+    "url": "https://bbs.ptsecurity.com/sites/ccb7de77-ff51-464d-bf25-7ebcfe0403d6/scans/d1b06ccb-3d56-46e6-9826-b53df8e0ff9f",
     "scan_status": "FINISHED",
     "score": 1,
     "sharedLink": "https://bbs.ptsecurity.com/shared/dee4Lyx",
@@ -312,7 +312,7 @@ Example output for `--target-file` option (with `--no-wait` option provided and 
     {
         "target_url": "http://first.example.com/",
         "target_uuid": "ccb7de77-ff51-464d-bf25-7ebcfe0403d6",
-        "url": "https://bbs.ptsecurity.com/sites/ccb7de77-ff51-464d-bf25-7ebcfe0403d6/scans/1",
+        "url": "https://bbs.ptsecurity.com/sites/ccb7de77-ff51-464d-bf25-7ebcfe0403d6/scans/d1b06ccb-3d56-46e6-9826-b53df8e0ff9f",
         "scan_status": "IN_PROGRESS",
         "score": null,
         "sharedLink": null,
@@ -323,7 +323,7 @@ Example output for `--target-file` option (with `--no-wait` option provided and 
     {
         "target_url": "http://second.example.com/",
         "target_uuid": "cce4cf46-1edf-443c-ae57-5b2abc8703bd",
-        "url": "https://bbs.ptsecurity.com/sites/cce4cf46-1edf-443c-ae57-5b2abc8703bd/scans/1",
+        "url": "https://bbs.ptsecurity.com/sites/d04df6be-6aa2-47a5-bb06-cabada4e41d3/scans/50d5cc1f-1dbc-4768-bb23-5dc303f00e87",
         "scan_status": "IN_PROGRESS",
         "score": null,
         "sharedLink": null,
@@ -334,7 +334,7 @@ Example output for `--target-file` option (with `--no-wait` option provided and 
     {
         "target_url": "http://third.example.com/",
         "target_uuid": "cbb3971e-3a22-40b9-8d43-aceca9bc4b19",
-        "url": "https://bbs.ptsecurity.com/sites/cbb3971e-3a22-40b9-8d43-aceca9bc4b19/scans/1",
+        "url": "https://bbs.ptsecurity.com/sites/39598b70-c704-4882-918d-c59f09e8bd7e/scans/d8dd5e74-8313-4e24-86bf-31a4fdd03c51",
         "scan_status": "IN_PROGRESS",
         "score": null,
         "sharedLink": null,
@@ -348,7 +348,7 @@ Example output for `--target-file` option (with `--no-wait` option provided and 
 In case an error occurs, the tool returns non-zero exit code and prints error log messages to `stderr`:
 
 ```
-2021-12-03 13:24:52,517 ERROR [root] BlackBox error: the scan did not succeed, see UI for the error reason: http://bbs.ptsecurity.com/sites/ccb7de77-ff51-464d-bf25-7ebcfe0403d6/scans/1
+2021-12-03 13:24:52,517 ERROR [root] BlackBox error: the scan did not succeed, see UI for the error reason: http://bbs.ptsecurity.com/sites/ccb7de77-ff51-464d-bf25-7ebcfe0403d6/scans/d1b06ccb-3d56-46e6-9826-b53df8e0ff9f
 ```
 
 ## Bugs and Issues

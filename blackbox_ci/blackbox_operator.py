@@ -88,7 +88,7 @@ def ensure_attrs_set(
 
 class BlackBoxOperator:
     _site_uuid: str
-    _scan_id: int
+    _scan_uuid: str
     _group_uuid: str
 
     def __init__(self, *, url: str, api: BlackBoxAPI) -> None:
@@ -130,19 +130,17 @@ class BlackBoxOperator:
         return None
 
     @ensure_attrs_set('_site_uuid')
-    def set_scan(self, *, scan_id: Optional[int]) -> None:
+    def set_scan(self, *, scan_uuid: Optional[str]) -> None:
         site = self._api.get_site(site_uuid=self._site_uuid)
         if not site['lastScan']:
             raise BlackBoxError('this site has not yet been scanned')
-        elif scan_id and site['lastScan']['id'] < scan_id:
-            raise BlackBoxError('the specified scan was not found')
 
-        if scan_id and scan_id < site['lastScan']['id']:
-            scan = self._api.get_scan(site_uuid=self._site_uuid, scan_id=scan_id)
-            self._scan_id = scan_id
+        if scan_uuid and scan_uuid != site['lastScan']['uuid']:
+            scan = self._api.get_scan(scan_uuid=scan_uuid)
+            self._scan_uuid = scan_uuid
             self._scan_finished = scan['status'] in IDLE_SCAN_STATUSES
         else:
-            self._scan_id = site['lastScan']['id']
+            self._scan_uuid = site['lastScan']['uuid']
             self._scan_finished = site['lastScan']['status'] in IDLE_SCAN_STATUSES
 
     def set_target(
@@ -259,19 +257,19 @@ class BlackBoxOperator:
             return False
         return last_scan['status'] not in IDLE_SCAN_STATUSES
 
-    @ensure_attrs_set('_site_uuid', '_scan_id')
+    @ensure_attrs_set('_site_uuid', '_scan_uuid')
     def is_scan_busy(self) -> bool:
-        scan = self._api.get_scan(site_uuid=self._site_uuid, scan_id=self._scan_id)
+        scan = self._api.get_scan(scan_uuid=self._scan_uuid)
         return scan['status'] not in IDLE_SCAN_STATUSES
 
-    @ensure_attrs_set('_site_uuid', '_scan_id')
+    @ensure_attrs_set('_site_uuid', '_scan_uuid')
     def is_scan_ok(self) -> bool:
-        scan = self._api.get_scan(site_uuid=self._site_uuid, scan_id=self._scan_id)
+        scan = self._api.get_scan(scan_uuid=self._scan_uuid)
         return scan['status'] == ScanStatus.finished and scan['errorReason'] is None
 
-    @ensure_attrs_set('_site_uuid', '_scan_id')
+    @ensure_attrs_set('_site_uuid', '_scan_uuid')
     def get_scan_error_reason(self) -> Optional[str]:
-        scan = self._api.get_scan(site_uuid=self._site_uuid, scan_id=self._scan_id)
+        scan = self._api.get_scan(scan_uuid=self._scan_uuid)
         return scan['errorReason']
 
     @ensure_attrs_set('_site_uuid')
@@ -289,10 +287,10 @@ class BlackBoxOperator:
 
     @ensure_attrs_set('_site_uuid')
     def start_scan(self) -> None:
-        self._scan_id = self._api.start_scan(site_uuid=self._site_uuid)
+        self._scan_uuid = self._api.start_scan(site_uuid=self._site_uuid)
         self._scan_finished = False
 
-    @ensure_attrs_set('_site_uuid', '_scan_id')
+    @ensure_attrs_set('_site_uuid', '_scan_uuid')
     def get_scan_report(
         self,
         *,
@@ -302,7 +300,7 @@ class BlackBoxOperator:
         partial_results: bool = False,
     ) -> ScanReport:
         site = self._api.get_site(site_uuid=self._site_uuid)
-        scan = self._api.get_scan(site_uuid=self._site_uuid, scan_id=self._scan_id)
+        scan = self._api.get_scan(scan_uuid=self._scan_uuid)
 
         report: ScanReport = {
             'target_url': target_url if target_url else site['url'],
@@ -318,9 +316,7 @@ class BlackBoxOperator:
             'errors': None,
         }
         if self._scan_finished or partial_results:
-            report['score'] = self._api.get_score(
-                site_uuid=self._site_uuid, scan_id=self._scan_id
-            )
+            report['score'] = self._api.get_score(scan_uuid=self._scan_uuid)
             report['vulns'] = self._collect_vulns()
         if shared_link:
             report['sharedLink'] = self._create_shared_link()
@@ -350,7 +346,7 @@ class BlackBoxOperator:
             'errors': errors,
         }
 
-        if hasattr(self, '_site_uuid') and hasattr(self, '_scan_id'):
+        if hasattr(self, '_site_uuid') and hasattr(self, '_scan_uuid'):
             report['url'] = self._scan_url
 
             try:
@@ -359,9 +355,7 @@ class BlackBoxOperator:
                     if not target_url
                     else target_url
                 )
-                scan = self._api.get_scan(
-                    site_uuid=self._site_uuid, scan_id=self._scan_id
-                )
+                scan = self._api.get_scan(scan_uuid=self._scan_uuid)
                 report['scan_status'] = (
                     ReportScanStatus[scan['status']]
                     if scan['status'] in IDLE_SCAN_STATUSES
@@ -369,9 +363,7 @@ class BlackBoxOperator:
                 )
                 if shared_link:
                     report['sharedLink'] = self._create_shared_link()
-                report['score'] = self._api.get_score(
-                    site_uuid=self._site_uuid, scan_id=self._scan_id
-                )
+                report['score'] = self._api.get_score(scan_uuid=self._scan_uuid)
                 report['vulns'] = self._collect_vulns()
             except BlackBoxHTTPError as request_error:
                 errors.append(self._convert_error_json(error=request_error))
@@ -400,7 +392,7 @@ class BlackBoxOperator:
         }
         return report
 
-    @ensure_attrs_set('_site_uuid', '_scan_id')
+    @ensure_attrs_set('_site_uuid', '_scan_uuid')
     def generate_report_file(
         self,
         *,
@@ -414,15 +406,14 @@ class BlackBoxOperator:
         if template_shortname in HTML_TEMPLATES_MAP.keys():
             extension = ReportExtension.HTML
             report_content = self._api.get_html_report_content(
-                site_uuid=self._site_uuid,
-                scan_id=self._scan_id,
+                scan_uuid=self._scan_uuid,
                 locale=locale,
                 template=HTML_TEMPLATES_MAP[template_shortname],
             )
         else:
             extension = ReportExtension.SARIF
             report_content = self._api.get_sarif_report_content(
-                site_uuid=self._site_uuid, scan_id=self._scan_id, locale=locale
+                scan_uuid=self._scan_uuid, locale=locale
             )
         report_path = save_report_content(
             report_dir=output_dir,
@@ -434,7 +425,7 @@ class BlackBoxOperator:
         )
         return report_path
 
-    @ensure_attrs_set('_site_uuid', '_scan_id')
+    @ensure_attrs_set('_site_uuid', '_scan_uuid')
     def wait_for_scan(self) -> None:
         while self.is_scan_busy():
             time.sleep(2.0)
@@ -456,21 +447,17 @@ class BlackBoxOperator:
         while self.is_target_busy():
             time.sleep(2.0)
 
-    @ensure_attrs_set('_site_uuid', '_scan_id')
+    @ensure_attrs_set('_site_uuid', '_scan_uuid')
     def _create_shared_link(self) -> str:
-        shared_link_uuid = self._api.create_shared_link(
-            site_uuid=self._site_uuid, scan_id=self._scan_id
-        )
+        shared_link_uuid = self._api.create_shared_link(scan_uuid=self._scan_uuid)
         shared_link = urllib.parse.urljoin(
             self._ui_base_url, f'/shared/{shared_link_uuid}'
         )
         return shared_link
 
-    @ensure_attrs_set('_site_uuid', '_scan_id')
+    @ensure_attrs_set('_site_uuid', '_scan_uuid')
     def _collect_vulns(self) -> TargetVulns:  # noqa: C901
-        group_list = self._api.get_vuln_groups(
-            site_uuid=self._site_uuid, scan_id=self._scan_id
-        )
+        group_list = self._api.get_vuln_groups(scan_uuid=self._scan_uuid)
         vuln_report: TargetVulns = {
             'issue_groups': [],
             'error_page_groups': [],
@@ -600,7 +587,7 @@ class BlackBoxOperator:
 
         return [self._convert_cve(vuln=v) for v in vulns]
 
-    @ensure_attrs_set('_site_uuid', '_scan_id')
+    @ensure_attrs_set('_site_uuid', '_scan_uuid')
     def _read_all_vulns(
         self, *, issue_type: str, request_key: str, severity: str
     ) -> List[VulnCommon]:
@@ -612,8 +599,7 @@ class BlackBoxOperator:
         page = 1  # page starts with 1
         while has_next_page is True:
             vuln_page = self._api.get_vuln_group_page(
-                site_uuid=self._site_uuid,
-                scan_id=self._scan_id,
+                scan_uuid=self._scan_uuid,
                 issue_type=issue_type,
                 request_key=request_key,
                 severity=severity,
@@ -909,5 +895,5 @@ class BlackBoxOperator:
     def _scan_url(self) -> str:
         return urllib.parse.urljoin(
             self._ui_base_url,
-            f'/sites/{self._site_uuid}/scans/{self._scan_id}',
+            f'/sites/{self._site_uuid}/scans/{self._scan_uuid}',
         )

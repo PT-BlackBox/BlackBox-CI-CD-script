@@ -75,7 +75,8 @@ REPORT_DIR_OPTION = '--report-dir'
 REPORT_TEMPLATE_OPTION = '--report-template'
 REPORT_LOCALE_OPTION = '--report-locale'
 RESULTS_ONLY_OPTION = '--results-only'
-SCAN_ID_OPTION = '--scan-id'
+SCAN_UUID_OPTION = '--scan-uuid'
+SCAN_UUID_OPTION_ALIAS = '--scan-id'
 
 # auth file keys
 AUTH_TYPE_KEY = 'TYPE'

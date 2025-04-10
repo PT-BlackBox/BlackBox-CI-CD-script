@@ -1,6 +1,6 @@
 import urllib.parse
-from typing import Any, List, Optional, cast
 from http import HTTPStatus
+from typing import Any, List, Optional, cast
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -95,13 +95,13 @@ class BlackBoxAPI:
         settings = resp.json()
         return cast(SiteSettings, settings)
 
-    def start_scan(self, *, site_uuid: str) -> int:
+    def start_scan(self, *, site_uuid: str) -> str:
         sites_url = urllib.parse.urljoin(
             self._api_service_url, f'sites/{site_uuid}/start'
         )
         resp = self._post(sites_url)
-        scan_id = resp.json()['id']
-        return int(scan_id)
+        scan_uuid = resp.json()['uuid']
+        return cast(str, scan_uuid)
 
     def stop_scan(self, *, site_uuid: str) -> None:
         sites_url = urllib.parse.urljoin(
@@ -109,19 +109,21 @@ class BlackBoxAPI:
         )
         self._post(sites_url)
 
-    def get_scan(self, *, site_uuid: str, scan_id: int) -> Scan:
-        scan_url = urllib.parse.urljoin(
-            self._api_service_url, f'sites/{site_uuid}/scans/{scan_id}'
-        )
-        resp = self._get(scan_url)
+    def get_scan(self, *, scan_uuid: str) -> Scan:
+        scan_url = urllib.parse.urljoin(self._api_service_url, f'scans/{scan_uuid}')
+        try:
+            resp = self._get(scan_url)
+        except BlackBoxHTTPError as er:
+            if er.response.status_code == 404:
+                raise BlackBoxError('the specified scan was not found') from er
+            raise er
         scan = resp.json()
         return cast(Scan, scan)
 
     def get_vuln_group_page(
         self,
         *,
-        site_uuid: str,
-        scan_id: int,
+        scan_uuid: str,
         issue_type: str,
         request_key: str,
         severity: str,
@@ -130,32 +132,28 @@ class BlackBoxAPI:
     ) -> VulnPage:
         vuln_group_url = urllib.parse.urljoin(
             self._api_service_url,
-            f'sites/{site_uuid}/scans/{scan_id}/vulnerabilities'
+            f'scans/{scan_uuid}/vulnerabilities'
             f'/{issue_type}/{request_key}/{severity}'
             f'?limit={limit}&page={page}',
         )
         resp = self._get(vuln_group_url)
         return cast(VulnPage, resp.json())
 
-    def get_vuln_groups(self, *, site_uuid: str, scan_id: int) -> List[VulnGroup]:
+    def get_vuln_groups(self, *, scan_uuid: str) -> List[VulnGroup]:
         vulns_url = urllib.parse.urljoin(
-            self._api_service_url, f'sites/{site_uuid}/scans/{scan_id}/vulnerabilities'
+            self._api_service_url, f'scans/{scan_uuid}/vulnerabilities'
         )
         resp = self._get(vulns_url)
         return cast(List[VulnGroup], resp.json())
 
-    def get_score(self, *, site_uuid: str, scan_id: int) -> Optional[float]:
-        score_url = urllib.parse.urljoin(
-            self._api_service_url, f'sites/{site_uuid}/scans/{scan_id}'
-        )
+    def get_score(self, *, scan_uuid: str) -> Optional[float]:
+        score_url = urllib.parse.urljoin(self._api_service_url, f'scans/{scan_uuid}')
         resp = self._get(score_url)
         score = resp.json()['score']
         return cast(Optional[float], score)
 
-    def create_shared_link(self, *, site_uuid: str, scan_id: int) -> str:
-        url = urllib.parse.urljoin(
-            self._api_service_url, f'sites/{site_uuid}/scans/{scan_id}/shared'
-        )
+    def create_shared_link(self, *, scan_uuid: str) -> str:
+        url = urllib.parse.urljoin(self._api_service_url, f'scans/{scan_uuid}/shared')
         resp = self._post(url, json={})
         uuid = resp.json()['uuid']
         return cast(str, uuid)
@@ -181,9 +179,9 @@ class BlackBoxAPI:
         return cast(str, uuid)
 
     def get_sarif_report_content(
-        self, *, site_uuid: str, scan_id: int, locale: ReportLocale
+        self, *, scan_uuid: str, locale: ReportLocale
     ) -> bytes:
-        url = urllib.parse.urljoin(self._api_service_url, f'reports/sarif/{site_uuid}/{scan_id}')
+        url = urllib.parse.urljoin(self._api_service_url, f'reports/sarif/{scan_uuid}')
         params = {
             'locale': locale.value,
         }
@@ -194,12 +192,11 @@ class BlackBoxAPI:
     def get_html_report_content(
         self,
         *,
-        site_uuid: str,
-        scan_id: int,
+        scan_uuid: str,
         locale: ReportLocale,
         template: ReportHTMLTemplate,
     ) -> bytes:
-        url = urllib.parse.urljoin(self._api_service_url, f'reports/html/{site_uuid}/{scan_id}')
+        url = urllib.parse.urljoin(self._api_service_url, f'reports/html/{scan_uuid}')
         params = {
             'locale': locale.value,
             'template': template.value,

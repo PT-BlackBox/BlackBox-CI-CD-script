@@ -39,9 +39,10 @@ from blackbox_ci.consts import (
     RESET_API_PROFILE,
     RESET_AUTH_PROFILE,
     RESULTS_ONLY_OPTION,
-    SCAN_ID_OPTION,
     SCAN_PROFILE_ENV,
     SCAN_PROFILE_OPTION,
+    SCAN_UUID_OPTION,
+    SCAN_UUID_OPTION_ALIAS,
     SCORE_FAIL_EXIT_CODE,
     SERVER_RETRY_BACKOFF_FACTOR,
     SERVER_RETRY_MAX_ATTEMPTS,
@@ -88,13 +89,13 @@ def collect_scan_report(
     report_dir: Optional[str],
     report_template: ReportTemplateShortname,
     report_locale: ReportLocale,
-    scan_id: Optional[int],
+    scan_uuid: Optional[str],
     **_: Any,
 ) -> ScanReport:
     operator.set_target(
         url=target_url, uuid=target_uuid, group_uuid=group_uuid, auto_create=auto_create
     )
-    operator.set_scan(scan_id=scan_id)
+    operator.set_scan(scan_uuid=scan_uuid)
     report_path: Optional[str] = (
         operator.generate_report_file(
             locale=report_locale,
@@ -442,13 +443,13 @@ def process_single_target(
     is_flag=True,
     help='Only get results of specified site. '
     'Last scan results by default. '
-    f'Use {SCAN_ID_OPTION} option to get results of specific scan.',
+    f'Use {SCAN_UUID_OPTION} option to get results of specific scan.',
 )
 @click.option(
-    SCAN_ID_OPTION,
-    type=click.IntRange(1),
+    SCAN_UUID_OPTION,
+    SCAN_UUID_OPTION_ALIAS,
     default=None,
-    help='Set the scan ID to get the results. '
+    help='Set the scan UUID to get the results. '
     f'Can be used without {RESULTS_ONLY_OPTION} option.',
 )
 @click.option(
@@ -483,7 +484,7 @@ def run_command(
     report_template: ReportTemplateShortname,
     report_locale: ReportLocale,
     results_only: bool,
-    scan_id: Optional[int],
+    scan_uuid: Optional[str],
     auth_data: Optional[TextIO],
 ) -> None:
     check_target_source(
@@ -495,13 +496,13 @@ def run_command(
     check_report_output_options(
         report_dir=report_dir,
         no_wait=no_wait,
-        scan_id=scan_id,
+        scan_uuid=scan_uuid,
         results_only=results_only,
     )
     check_auth_options(
         auth_profile_uuid=auth_profile_uuid,
         auth_data=auth_data,
-        scan_id=scan_id,
+        scan_uuid=scan_uuid,
         results_only=results_only,
     )
 
@@ -509,7 +510,7 @@ def run_command(
         warnings.simplefilter('ignore', urllib3.exceptions.InsecureRequestWarning)
 
     handler: Callable[..., ScanReport]
-    if results_only or scan_id:
+    if results_only or scan_uuid:
         handler = collect_scan_report
     else:
         handler = run_target_scan
@@ -535,7 +536,7 @@ def run_command(
             report_template=report_template,
             report_locale=report_locale,
             results_only=results_only,
-            scan_id=scan_id,
+            scan_uuid=scan_uuid,
             auth_data=auth_data,
         )
     elif target_url or target_uuid:
@@ -559,7 +560,7 @@ def run_command(
             report_template=report_template,
             report_locale=report_locale,
             results_only=results_only,
-            scan_id=scan_id,
+            scan_uuid=scan_uuid,
             auth_data=auth_data,
         )
 
