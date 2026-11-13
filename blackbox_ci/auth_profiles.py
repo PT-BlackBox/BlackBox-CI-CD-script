@@ -15,6 +15,7 @@ from blackbox_ci.consts import (
     AUTH_SUBMIT_VALUE_KEY,
     AUTH_SUCCESS_STRING_KEY,
     AUTH_SUCCESS_URL_KEY,
+    AUTH_TEST_STRING_KEY,
     AUTH_TOKEN_KEY,
     AUTH_TYPE_KEY,
     AUTH_USERNAME_FIELD_KEY,
@@ -90,9 +91,10 @@ def _convert_auth_data(*, raw_auth_data: dict[str, str], auth_type: Authenticati
 def _convert_http_basic(*, raw_auth_data: dict[str, str]) -> HTTPBasicSchema:
     username = raw_auth_data.pop(AUTH_USERNAME_KEY, '')
     password = raw_auth_data.pop(AUTH_PASSWORD_KEY, '')
+    test_string = raw_auth_data.pop(AUTH_TEST_STRING_KEY, None)
     if not username or not password:
         raise BlackBoxError('username and password should be provided')
-    return HTTPBasicSchema(username=username, password=password)
+    return HTTPBasicSchema(username=username, password=password, test_string=test_string)
 
 
 def _convert_html_auto_form(*, raw_auth_data: dict[str, str]) -> HTMLAutoFormSchema:
@@ -100,6 +102,7 @@ def _convert_html_auto_form(*, raw_auth_data: dict[str, str]) -> HTMLAutoFormSch
     password = raw_auth_data.pop(AUTH_PASSWORD_KEY, '')
     form_url = raw_auth_data.pop(AUTH_FORM_URL_KEY, '')
     success_string = raw_auth_data.pop(AUTH_SUCCESS_STRING_KEY, '')
+    success_url = raw_auth_data.pop(AUTH_SUCCESS_URL_KEY, None)
     if not all(
         (
             username,
@@ -114,6 +117,7 @@ def _convert_html_auto_form(*, raw_auth_data: dict[str, str]) -> HTMLAutoFormSch
         password=password,
         form_url=form_url,
         success_string=success_string,
+        success_url=success_url,
     )
 
 
@@ -126,6 +130,7 @@ def _convert_html_form_based(*, raw_auth_data: dict[str, str]) -> HTMLFormBasedS
     password_value = raw_auth_data.pop(AUTH_PASSWORD_KEY, '')
     regexp_of_success = raw_auth_data.pop(AUTH_REGEXP_OF_SUCCESS_KEY, '')
     submit_value = raw_auth_data.pop(AUTH_SUBMIT_VALUE_KEY, None)
+    success_url = raw_auth_data.pop(AUTH_SUCCESS_URL_KEY, None)
     if not all(
         (
             form_url,
@@ -150,6 +155,7 @@ def _convert_html_form_based(*, raw_auth_data: dict[str, str]) -> HTMLFormBasedS
         password_value=password_value,
         regexp_of_success=regexp_of_success,
         submit_value=submit_value,
+        success_url=success_url,
     )
 
 

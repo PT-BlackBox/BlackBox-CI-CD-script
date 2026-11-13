@@ -106,16 +106,22 @@ The file with authentication data contains `KEY=VALUE` pairs in its lines. Keys 
 - `NAME` - Query parameter name for `QUERY` or header name for `COOKIE`, `HEADER`
 - `VALUE` - Value of the api key
 - `TOKEN` - Value of the Bearer token
+- `TEST_STRING` - String for verifying authentication success (`httpBasic`)
 
 #### httpBasic
+
+`TEST_STRING` is optional
 
 ```
 TYPE=httpBasic
 USERNAME=username
 PASSWORD=password
+TEST_STRING=My profile
 ```
 
 #### htmlAutoForm
+
+`SUCCESS_URL` is optional
 
 ```
 TYPE=htmlAutoForm
@@ -123,11 +129,12 @@ USERNAME=username
 PASSWORD=password
 FORM_URL=http://staging.example.com/login/
 SUCCESS_STRING=My profile
+SUCCESS_URL=http://staging.example.com/after_login/
 ```
 
 #### htmlFormBased
 
-`SUBMIT_VALUE` is optional
+`SUBMIT_VALUE` and `SUCCESS_URL` are optional
 
 ```
 TYPE=htmlFormBased
@@ -139,6 +146,7 @@ PASSWORD_FIELD=pass
 PASSWORD=password
 REGEXP_OF_SUCCESS=Welcome to my site!
 SUBMIT_VALUE=Log in
+SUCCESS_URL=http://staging.example.com/after_login/
 ```
 
 #### rawCookie
